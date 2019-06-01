@@ -1,7 +1,6 @@
-redis启动入口
-=============
-* server.c         
-----------
+1.redis启动入口
+1.1.在server.c中我们找到了main函数,在解读main函数的过程中遇到了很多问题.
+    在注释中都已标注,并做一一解答.我想完全搞清楚了main函数对redis的启动过程也有个大概的了解
 int main(int argc, char **argv) {
     struct timeval tv;
     int j;
