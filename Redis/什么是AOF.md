@@ -1,2 +1,2 @@
 # 什么是AOF?
-###### Append of File
+###### Append Only File
