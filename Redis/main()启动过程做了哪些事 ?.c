@@ -1,6 +1,4 @@
 1.redis启动入口
-1.1.在server.c中我们找到了main函数,在解读main函数的过程中遇到了很多问题.
-    在注释中都已标注,并做一一解答.我想完全搞清楚了main函数对redis的启动过程也有个大概的了解
 int main(int argc, char **argv) {
     struct timeval tv;
     int j;
@@ -46,10 +44,10 @@ int main(int argc, char **argv) {
     gettimeofday(&tv,NULL);                              /* 一天中的时间  */
 
     char hashseed[16];
-    getRandomHexChars(hashseed,sizeof(hashseed));         /* 生成随机的hex的hash种子, 种子的作用是什么? 什么地方会用到? */
+    getRandomHexChars(hashseed,sizeof(hashseed));         /* 生成随机的hex的hash种子 */
     dictSetHashFunctionSeed((uint8_t*)hashseed);
-    server.sentinel_mode = checkForSentinelMode(argc,argv);   /*  检查redis的哨兵模式，不知翻译的是否恰当，作用是什么?  */
-    initServerConfig();                                       /* 初始化服务器的配置, 初始化了哪些配置? 有什么作用? */
+    server.sentinel_mode = checkForSentinelMode(argc,argv);   /*  检查redis的哨兵模式，不知翻译的是否恰当 */
+    initServerConfig();                                       /* 初始化服务器的配置,  */
     ACLInit(); /* The ACL subsystem must be initialized ASAP because the
                   basic networking code and client creation depends on it. */
     /** ACL 子系统必须初始化为 ASAP,因为基础网络代码 & 客户端的创建都依赖于它
@@ -59,7 +57,7 @@ int main(int argc, char **argv) {
      */
 
 
-    moduleInitModulesSystem();        /* module系统的初始化，module系统中包含哪些东西? */
+    moduleInitModulesSystem();        /* module系统的初始化 */
 
     /* Store the executable path and arguments in a safe place in order
      * to be able to restart the server later. */
@@ -86,9 +84,9 @@ int main(int argc, char **argv) {
      * so that we can easily execute an RDB check on loading errors. */
     /**  什么事 rdb mode & aof mode ?  */
     if (strstr(argv[0],"redis-check-rdb") != NULL)
-        redis_check_rdb_main(argc,argv,NULL);               /** check 的时候做了哪些事 */
+        redis_check_rdb_main(argc,argv,NULL);               
     else if (strstr(argv[0],"redis-check-aof") != NULL)
-        redis_check_aof_main(argc,argv);                    /** check 的时候做了哪些事 */
+        redis_check_aof_main(argc,argv);                    
 
     /** 解析输入的指令   */
     if (argc >= 2) {
@@ -177,11 +175,11 @@ int main(int argc, char **argv) {
     int background = server.daemonize && !server.supervised;
     if (background) daemonize();
 
-    initServer();           /** 初始化服务器, 具体初始化了什么?  */
+    initServer();           /** 初始化服务器  */
     if (background || server.pidfile) createPidFile();       /** 创建Pid文件  */
     redisSetProcTitle(argv[0]);          /** 设置进程 title , proc = process */
     redisAsciiArt();                     /** 用ascii码打印logo */
-    checkTcpBacklogSettings();           /** 检查tcp后台日志的设置, 设置了哪些东西? **/
+    checkTcpBacklogSettings();           /** 检查tcp后台日志的设置 **/
 
     if (!server.sentinel_mode) {       /** 哨兵模式下的一些设置  */
         /* Things not needed when running in Sentinel mode. */
@@ -189,11 +187,11 @@ int main(int argc, char **argv) {
     #ifdef __linux__
         linuxMemoryWarnings();
     #endif
-        moduleLoadFromQueue();           /** 从队列中加载module, 加载了哪些module? module的作用是什么? */
-        ACLLoadUsersAtStartup();         /** ACL 加载用户 在启动的时候, 如何加载用户的? */
-        loadDataFromDisk();              /** 从磁盘加载数据 , 如何加载数据的? 加载了哪些数据? */
+        moduleLoadFromQueue();           /** 从队列中加载module */
+        ACLLoadUsersAtStartup();         /** ACL 加载用户 在启动的时候 */
+        loadDataFromDisk();              /** 从磁盘加载数据  */
         if (server.cluster_enabled) {
-            if (verifyClusterConfigWithData() == C_ERR) {   /**通过数据验证集群的配置， 如何验证的? */
+            if (verifyClusterConfigWithData() == C_ERR) {   /**通过数据验证集群的配置 */
                 serverLog(LL_WARNING,
                     "You can't have keys in a DB different than DB 0 when in "
                     "Cluster mode. Exiting.");
@@ -205,7 +203,7 @@ int main(int argc, char **argv) {
         if (server.sofd > 0)
             serverLog(LL_NOTICE,"The server is now ready to accept connections at %s", server.unixsocket);
     } else {
-        sentinelIsRunning();       /**   处于哨兵模式下时候， 该函数做了哪些事情? */
+        sentinelIsRunning();       /**   处于哨兵模式下 */
     }
 
     /* Warning the user about suspicious maxmemory setting. */
