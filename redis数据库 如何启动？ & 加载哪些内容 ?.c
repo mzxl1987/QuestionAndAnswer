@@ -1,5 +1,5 @@
-  #redis启动入口
-  ##server.c         
+#redis启动入口
+##server.c         
 int main(int argc, char **argv) {
     struct timeval tv;
     int j;
