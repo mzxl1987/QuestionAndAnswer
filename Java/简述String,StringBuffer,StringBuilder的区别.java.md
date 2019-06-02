@@ -17,72 +17,21 @@
   * ### StringBuffer是线程安全的,final class,不可以被继承,大多数的方法都使用了synchronized做了修饰.
   ###### StringBuffer.class
   ```
-  /**
- * A thread-safe, mutable sequence of characters.                   //第一句注释就说明SB是线程安全的
+  /**  
+ * 第一句注释就说明SB是线程安全的             
+ * A thread-safe, mutable sequence of characters.      
  * A string buffer is like a {@link String}, but can be modified. At any
  * point in time it contains some particular sequence of characters, but
  * the length and content of the sequence can be changed through certain
  * method calls.
- * <p>     //接下来这段说明了所有必要的操作都用 synchronized 关键字做了修饰
+ * 接下来这段说明了所有必要的操作都用 synchronized 关键字做了修饰
+ * <p>     
  * String buffers are safe for use by multiple threads. The methods
  * are synchronized where necessary so that all the operations on any
  * particular instance behave as if they occur in some serial order
  * that is consistent with the order of the method calls made by each of
  * the individual threads involved.
- * <p>
- * The principal operations on a {@code StringBuffer} are the
- * {@code append} and {@code insert} methods, which are
- * overloaded so as to accept data of any type. Each effectively
- * converts a given datum to a string and then appends or inserts the
- * characters of that string to the string buffer. The
- * {@code append} method always adds these characters at the end
- * of the buffer; the {@code insert} method adds the characters at
- * a specified point.
- * <p>
- * For example, if {@code z} refers to a string buffer object
- * whose current contents are {@code "start"}, then
- * the method call {@code z.append("le")} would cause the string
- * buffer to contain {@code "startle"}, whereas
- * {@code z.insert(4, "le")} would alter the string buffer to
- * contain {@code "starlet"}.
- * <p>
- * In general, if sb refers to an instance of a {@code StringBuffer},
- * then {@code sb.append(x)} has the same effect as
- * {@code sb.insert(sb.length(), x)}.
- * <p>
- * Whenever an operation occurs involving a source sequence (such as
- * appending or inserting from a source sequence), this class synchronizes
- * only on the string buffer performing the operation, not on the source.
- * Note that while {@code StringBuffer} is designed to be safe to use
- * concurrently from multiple threads, if the constructor or the
- * {@code append} or {@code insert} operation is passed a source sequence
- * that is shared across threads, the calling code must ensure
- * that the operation has a consistent and unchanging view of the source
- * sequence for the duration of the operation.
- * This could be satisfied by the caller holding a lock during the
- * operation's call, by using an immutable source sequence, or by not
- * sharing the source sequence across threads.
- * <p>
- * Every string buffer has a capacity. As long as the length of the
- * character sequence contained in the string buffer does not exceed
- * the capacity, it is not necessary to allocate a new internal
- * buffer array. If the internal buffer overflows, it is
- * automatically made larger.
- * <p>
- * Unless otherwise noted, passing a {@code null} argument to a constructor
- * or method in this class will cause a {@link NullPointerException} to be
- * thrown.
- * <p>
- * As of  release JDK 5, this class has been supplemented with an equivalent
- * class designed for use by a single thread, {@link StringBuilder}.  The
- * {@code StringBuilder} class should generally be used in preference to
- * this one, as it supports all of the same operations but it is faster, as
- * it performs no synchronization.
- *
- * @author      Arthur van Hoff
- * @see     java.lang.StringBuilder
- * @see     java.lang.String
- * @since   JDK1.0
+ * ......
  */
  public final class StringBuffer
     extends AbstractStringBuilder
@@ -92,6 +41,7 @@
   /**
    * @throws IndexOutOfBoundsException {@inheritDoc}
    * @since      1.5
+   * 该方法会在super.insert()中被回调
    */
   @Override
   public synchronized StringBuffer insert(int dstOffset, CharSequence s,
@@ -124,6 +74,16 @@
       super.insert(offset, b);    //请查看super.insert方法
       return this;
   }
+  ......
+  //StringBuffer将数据放在缓存中
+  @Override
+  public synchronized String toString() {
+      if (toStringCache == null) {
+          toStringCache = Arrays.copyOfRange(value, 0, count);
+      }
+      return new String(toStringCache, true);
+  }
+  
 ......
 }
   ```
@@ -156,5 +116,49 @@
         if (s instanceof String)
             return this.insert(dstOffset, (String)s);        // 该方法在StringBuffer已经重写,并加了synchronized
         return this.insert(dstOffset, s, 0, s.length());     // 该方法在StringBuffer已经重写,并加了synchronized
+    }
+  ```
+  * ### StringBuilder类的实现接口与StringBuffer相同,但是不是线程安全的.
+  ###### StringBuilder.class
+  ```
+  public final class StringBuilder
+    extends AbstractStringBuilder
+    implements java.io.Serializable, CharSequence
+  {
+  ......
+  }
+  ```
+  * ### StringBuilder.toString() 与 StringBuffer.toString()方法实现上的区别
+  StringBuffer使用了,cache缓存,共享; StringBuilder没有,只是重新new String()
+  ###### StringBuffer.class
+  ```
+  @Override
+  public synchronized String toString() {
+      if (toStringCache == null) {
+          toStringCache = Arrays.copyOfRange(value, 0, count);
+      }
+      return new String(toStringCache, true);
+  }
+  ```
+  ###### StringBuilder.class
+  ```
+  @Override
+  public String toString() {
+      // Create a copy, don't share the array
+      return new String(value, 0, count);
+  }
+  ```
+  ###### String.class
+  ```
+  /*
+    * 注释中给了相应的解释,该构造函数使用shares value array 是为了速度.
+    * Package private constructor which shares value array for speed.
+    * this constructor is always expected to be called with share==true.
+    * a separate constructor is needed because we already have a public
+    * String(char[]) constructor that makes a copy of the given char[].
+    */
+    String(char[] value, boolean share) {
+        // assert share : "unshared not supported";
+        this.value = value;
     }
   ```
