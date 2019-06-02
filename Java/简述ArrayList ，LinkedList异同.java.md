@@ -28,7 +28,7 @@
   ```
   ###### LinkedList.class
   只存放Node<E> 类型的 first, last指针,具体数据则存放在了Node<E>节点中，Node<E>是LinkedList的静态内部类.
-  Node<E>对象中除了存放element之外还存放了first,last 2个Node<E>类型的引用
+  Node<E>对象中除了存放element之外还存放了prev,next 2个Node<E>类型的引用
   ```
   public class LinkedList<E>
     extends AbstractSequentialList<E>
@@ -249,5 +249,5 @@
     }
   ```
   * ### LinkedList 比 ArrayList 更占内存
-  ArrayList 存储对象本身, LinkedList 存储的是Node<E>, Node<E>中除了对象本身之外,还有2个Node<E>的引用
+  ArrayList 存储对象本身, LinkedList 存储的是Node<E>, Node<E>中除了对象本身之外,还有 prev,next 2个Node<E>类型的引用
   
