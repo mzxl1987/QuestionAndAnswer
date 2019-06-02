@@ -4,7 +4,7 @@
    public final class String
     implements java.io.Serializable, Comparable<String>, CharSequence {
     /** The value is used for character storage. */
-    __//最终String的数据都存储在 char[] 中__
+    //最终String的数据都存储在 char[] 中
     private final char value[];
   
     /** Cache the hash code for the string */
