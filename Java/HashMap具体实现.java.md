@@ -16,3 +16,7 @@ Java中定义了java.util.Map的接口,该接口实现了常用的4个类:HashMa
 > 如果使用排序的映射的时候，建议使用TreeMap. Treemap.Key必须实现Comparable接口,或者new TreeMap()的时候在构造函数中传入自定义的Comparable
 > 否则会跑出ClassCastException
 上述Map类型中要求Key是不可改变对象,不可改变是指该对象的HashCode不会改变.如果HashCode改变了,Map对象就定位不到映射的对象了
+# 存储结构
+
+
+
