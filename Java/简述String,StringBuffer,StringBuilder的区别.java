@@ -154,7 +154,7 @@
         if (s == null)
             s = "null";
         if (s instanceof String)
-            return this.insert(dstOffset, (String)s);        // **该方法在StringBuffer已经重写,并加了synchronized**
-        return this.insert(dstOffset, s, 0, s.length());     // **该方法在StringBuffer已经重写,并加了synchronized**
+            return this.insert(dstOffset, (String)s);        // 该方法在StringBuffer已经重写,并加了synchronized
+        return this.insert(dstOffset, s, 0, s.length());     // 该方法在StringBuffer已经重写,并加了synchronized
     }
   ```
