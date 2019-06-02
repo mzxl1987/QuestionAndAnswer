@@ -1,5 +1,5 @@
   # String能被继承吗 ? 为什么?
-  * 不可以,因为String类有final修饰符,实现细节不允许改变
+  * ## 不可以,因为String类有final修饰符,实现细节不允许改变
   ```
    public final class String
     implements java.io.Serializable, Comparable<String>, CharSequence {
