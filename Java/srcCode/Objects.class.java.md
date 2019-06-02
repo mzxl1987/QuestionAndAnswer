@@ -56,6 +56,8 @@ public final class Objects {
      * and {@code false} otherwise
      * @see Object#equals(Object)
      */
+    // >  引用相同
+    // >  a != null and a,b值相同
     public static boolean equals(Object a, Object b) {
         return (a == b) || (a != null && a.equals(b));
     }
@@ -95,7 +97,7 @@ public final class Objects {
      * a {@code null} argument
      * @see Object#hashCode
      */
-    > 调用 Object.hashCode() 生成 hashCode 
+    // > 调用 Object.hashCode() 生成 hashCode 
     public static int hashCode(Object o) {
         return o != null ? o.hashCode() : 0;
     }
