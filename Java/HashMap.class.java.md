@@ -205,12 +205,12 @@ public class HashMap<K,V> extends AbstractMap<K,V>
      * The concurrent-programming-like SSA-based coding style helps
      * avoid aliasing errors amid all of the twisty pointer operations.
      */
-    > 默认初始化容量是 power(2,4), 默认初始化容量必须是power(2,N)
+    // > 默认初始化容量是 power(2,4), 默认初始化容量必须是power(2,N)
     /**
      * The default initial capacity - MUST be a power of two.
      */
     static final int DEFAULT_INITIAL_CAPACITY = 1 << 4; // aka 16
-    > 最大容量是power(2,30)
+    // > 最大容量是power(2,30)
     /**
      * The maximum capacity, used if a higher value is implicitly specified
      * by either of the constructors with arguments.
@@ -218,14 +218,14 @@ public class HashMap<K,V> extends AbstractMap<K,V>
      */
     static final int MAXIMUM_CAPACITY = 1 << 30;
 
-    > 默认负载因数是0.75
+    // > 默认负载因数是0.75
     /**
      * The load factor used when none specified in constructor.
      */
     static final float DEFAULT_LOAD_FACTOR = 0.75f;
     
-    > TREEIFY_THRESHOLD表示将list转换成tree的阈值
-    > 当容器中的element >= treeify_threshold的时候,容器将转换成tree
+    // > TREEIFY_THRESHOLD表示将list转换成tree的阈值
+    // > 当容器中的element >= treeify_threshold的时候,容器将转换成tree
     /**
      * The bin count threshold for using a tree rather than list for a
      * bin.  Bins are converted to trees when adding an element to a
@@ -241,6 +241,7 @@ public class HashMap<K,V> extends AbstractMap<K,V>
      * resize operation. Should be less than TREEIFY_THRESHOLD, and at
      * most 6 to mesh with shrinkage detection under removal.
      */
+     // > 当 bin count < UNTREEIFY_THRESHOLD 时,将 tree 转换成 list
     static final int UNTREEIFY_THRESHOLD = 6;
 
     /**
@@ -249,17 +250,20 @@ public class HashMap<K,V> extends AbstractMap<K,V>
      * Should be at least 4 * TREEIFY_THRESHOLD to avoid conflicts
      * between resizing and treeification thresholds.
      */
+     // > bin 转换成 tree 的 最小容量, (否则 太多的节点在一个容器 table 需要 resized)
+     // > 为了避免 resizing & treeification thresholds之间的冲突，MIN_TREEIFY_CAPACITY >= 4 * TREEIFY_THRESHOLD
     static final int MIN_TREEIFY_CAPACITY = 64;
 
     /**
      * Basic hash bin node, used for most entries.  (See below for
      * TreeNode subclass, and in LinkedHashMap for its Entry subclass.)
      */
+    // > 容器的节点
     static class Node<K,V> implements Map.Entry<K,V> {
-        final int hash;
+        final int hash;  
         final K key;
         V value;
-        Node<K,V> next;
+        Node<K,V> next;       // > 链表 next node
 
         Node(int hash, K key, V value, Node<K,V> next) {
             this.hash = hash;
@@ -271,7 +275,8 @@ public class HashMap<K,V> extends AbstractMap<K,V>
         public final K getKey()        { return key; }
         public final V getValue()      { return value; }
         public final String toString() { return key + "=" + value; }
-
+        
+        > key.hashCode XOR value.hashCode
         public final int hashCode() {
             return Objects.hashCode(key) ^ Objects.hashCode(value);
         }
@@ -281,14 +286,15 @@ public class HashMap<K,V> extends AbstractMap<K,V>
             value = newValue;
             return oldValue;
         }
-
+        
+        // > equal 语句的实现
         public final boolean equals(Object o) {
-            if (o == this)
+            if (o == this)   // > 先判断引用是否相同
                 return true;
-            if (o instanceof Map.Entry) {
+            if (o instanceof Map.Entry) {    // > 判断类型是否相同
                 Map.Entry<?,?> e = (Map.Entry<?,?>)o;
                 if (Objects.equals(key, e.getKey()) &&
-                    Objects.equals(value, e.getValue()))
+                    Objects.equals(value, e.getValue()))      // > 判断key & value 是否相同
                     return true;
             }
             return false;
