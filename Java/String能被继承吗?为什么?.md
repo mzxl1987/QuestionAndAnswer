@@ -1,17 +1,17 @@
   # String能被继承吗 ? 为什么?
   * 不可以,因为String类有final修饰符,实现细节不允许改变
   ```
-  public final class String
-    implements java.io.Serializable, Comparable<String>, CharSequence {
-    /** The value is used for character storage. */
-    //最终String的数据都存储在 char[] 中
-    private final char value[];
-
-    /** Cache the hash code for the string */
-    private int hash; // Default to 0
-
-    /** use serialVersionUID from JDK 1.0.2 for interoperability */
-    private static final long serialVersionUID = -6849794470754667710L;
+  > public final class String
+  >  implements java.io.Serializable, Comparable<String>, CharSequence {
+  >  /** The value is used for character storage. */
+  >  //最终String的数据都存储在 char[] 中
+  >  private final char value[];
+  >
+  >  /** Cache the hash code for the string */
+  >  private int hash; // Default to 0
+  >
+  >  /** use serialVersionUID from JDK 1.0.2 for interoperability */
+  >  private static final long serialVersionUID = -6849794470754667710L;
   ```
   * String 一旦创建无法改变,在String的开头的注释中有这么一句话
   ```
