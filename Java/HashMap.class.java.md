@@ -319,6 +319,8 @@ public class HashMap<K,V> extends AbstractMap<K,V>
      * to incorporate impact of the highest bits that would otherwise
      * never be used in index calculations because of table bounds.
      */
+     // > key == null , 返回 0
+     // > key != null , 返回 
     static final int hash(Object key) {
         int h;
         return (key == null) ? 0 : (h = key.hashCode()) ^ (h >>> 16);
@@ -360,13 +362,25 @@ public class HashMap<K,V> extends AbstractMap<K,V>
     /**
      * Returns a power of two size for the given target capacity.
      */
+    // > 该算法是为了计算 table 的大小 , 
+    // > 使得返回的值 n = power(2,N); N 的大小取决于 cap 的最高的有效位 1 的位置
+    // > step 1 : 为了 当cap = power(2,N)时,最高有效位降低 1 位, 即 N = N - 1
+    // > step 2 ~ step 6 : 是为了将最高位 N 的 1 裂变至 N-1 ~ 0 的位中
+    // >               demo1          demo2
+    // >       cap = 0b1001;          0b1000         
+    // > step 1: n = 0b1000;          0b0111
+    // > step 2: n = 0b1100;          0b0111
+    // > step 3: n = 0b1111;          0b0111
+    // > step 4: n = 0b1111;          0b0111 
+    // > step 5: n = 0b1111;          0b0111
+    // > step 6: n = 0b1111;          0b0111
     static final int tableSizeFor(int cap) {
-        int n = cap - 1;
-        n |= n >>> 1;
-        n |= n >>> 2;
-        n |= n >>> 4;
-        n |= n >>> 8;
-        n |= n >>> 16;
+        int n = cap - 1;   // > step 1
+        n |= n >>> 1;      // > step 2
+        n |= n >>> 2;      // > step 3
+        n |= n >>> 4;      // > step 4
+        n |= n >>> 8;      // > step 5
+        n |= n >>> 16;     // > step 6
         return (n < 0) ? 1 : (n >= MAXIMUM_CAPACITY) ? MAXIMUM_CAPACITY : n + 1;
     }
 
@@ -378,6 +392,7 @@ public class HashMap<K,V> extends AbstractMap<K,V>
      * (We also tolerate length zero in some operations to allow
      * bootstrapping mechanics that are currently not needed.)
      */
+    // > table的主体 是Node<K,V>[]
     transient Node<K,V>[] table;
 
     /**
@@ -537,6 +552,7 @@ public class HashMap<K,V> extends AbstractMap<K,V>
      *
      * @see #put(Object, Object)
      */
+    // > 根据 key 获取 value
     public V get(Object key) {
         Node<K,V> e;
         return (e = getNode(hash(key), key)) == null ? null : e.value;
@@ -551,14 +567,20 @@ public class HashMap<K,V> extends AbstractMap<K,V>
      */
     final Node<K,V> getNode(int hash, Object key) {
         Node<K,V>[] tab; Node<K,V> first, e; int n; K k;
-        if ((tab = table) != null && (n = tab.length) > 0 &&
-            (first = tab[(n - 1) & hash]) != null) {
+        if ((tab = table) != null && (n = tab.length) > 0 &&  // > table 不为 null & tab.length > 0
+            (first = tab[(n - 1) & hash]) != null) {    
+            // > 获取第一个节点
             if (first.hash == hash && // always check first node
-                ((k = first.key) == key || (key != null && key.equals(k))))
+                // > 判断第一个值是否与 key 相等
+                ((k = first.key) == key || (key != null && key.equals(k))))  
                 return first;
             if ((e = first.next) != null) {
-                if (first instanceof TreeNode)
-                    return ((TreeNode<K,V>)first).getTreeNode(hash, key);
+                // > 判断 first 是否是 TreeNode
+                if (first instanceof TreeNode)  
+                    // > 根据 hash & key 获取树节点
+                    return ((TreeNode<K,V>)first).getTreeNode(hash, key);   
+                
+                // > 根据 next 顺序查找
                 do {
                     if (e.hash == hash &&
                         ((k = e.key) == key || (key != null && key.equals(k))))
@@ -593,6 +615,7 @@ public class HashMap<K,V> extends AbstractMap<K,V>
      *         (A <tt>null</tt> return can also indicate that the map
      *         previously associated <tt>null</tt> with <tt>key</tt>.)
      */
+    // > 存入 key & value
     public V put(K key, V value) {
         return putVal(hash(key), key, value, false, true);
     }
@@ -610,41 +633,46 @@ public class HashMap<K,V> extends AbstractMap<K,V>
     final V putVal(int hash, K key, V value, boolean onlyIfAbsent,
                    boolean evict) {
         Node<K,V>[] tab; Node<K,V> p; int n, i;
+        // > 判断 table 是否为 null or table.length == 0
         if ((tab = table) == null || (n = tab.length) == 0)
-            n = (tab = resize()).length;
-        if ((p = tab[i = (n - 1) & hash]) == null)
-            tab[i] = newNode(hash, key, value, null);
-        else {
+            n = (tab = resize()).length;  // > 重新设置table的大小
+        if ((p = tab[i = (n - 1) & hash]) == null)  // > 判断table中是否存在相应的key
+            tab[i] = newNode(hash, key, value, null);  // > 生成 Node()
+        else {  // > 已存在key
             Node<K,V> e; K k;
+            // > 判断当前的 Node.Key 与 传入的 Key是否相等
             if (p.hash == hash &&
                 ((k = p.key) == key || (key != null && key.equals(k))))
-                e = p;
-            else if (p instanceof TreeNode)
+                e = p;  // > 将当前Node赋值给 e
+            else if (p instanceof TreeNode)   // > 判断 p 是否 是TreeNode 
+                // > 将当前节点添加到树
                 e = ((TreeNode<K,V>)p).putTreeVal(this, tab, hash, key, value);
             else {
                 for (int binCount = 0; ; ++binCount) {
-                    if ((e = p.next) == null) {
-                        p.next = newNode(hash, key, value, null);
-                        if (binCount >= TREEIFY_THRESHOLD - 1) // -1 for 1st
+                    if ((e = p.next) == null) { // > 查找到list尾部
+                        p.next = newNode(hash, key, value, null);  //将p.next = new Node()
+                        if (binCount >= TREEIFY_THRESHOLD - 1) // -1 for 1st // > 判断是否可以执行 list -> tree的转换
                             treeifyBin(tab, hash);
                         break;
                     }
+                    // > 查找到相应的值
                     if (e.hash == hash &&
                         ((k = e.key) == key || (key != null && key.equals(k))))
                         break;
                     p = e;
                 }
             }
+            // > 当 e != null 的时候, 证明table中存在Key
             if (e != null) { // existing mapping for key
                 V oldValue = e.value;
                 if (!onlyIfAbsent || oldValue == null)
-                    e.value = value;
+                    e.value = value;  // > Node赋予新的value
                 afterNodeAccess(e);
-                return oldValue;
+                return oldValue;  //返回原有的value
             }
         }
-        ++modCount;
-        if (++size > threshold)
+        ++modCount;  //修改次数增加
+        if (++size > threshold)  //长度 + 1, 并判断是否需要扩容
             resize();
         afterNodeInsertion(evict);
         return null;
@@ -659,19 +687,20 @@ public class HashMap<K,V> extends AbstractMap<K,V>
      *
      * @return the table
      */
+    // > 扩容,初始化 or 容量扩大2倍
     final Node<K,V>[] resize() {
         Node<K,V>[] oldTab = table;
         int oldCap = (oldTab == null) ? 0 : oldTab.length;
         int oldThr = threshold;
         int newCap, newThr = 0;
         if (oldCap > 0) {
-            if (oldCap >= MAXIMUM_CAPACITY) {
+            if (oldCap >= MAXIMUM_CAPACITY) {  // > 判断原有长度是否大于最大容量
                 threshold = Integer.MAX_VALUE;
                 return oldTab;
             }
-            else if ((newCap = oldCap << 1) < MAXIMUM_CAPACITY &&
-                     oldCap >= DEFAULT_INITIAL_CAPACITY)
-                newThr = oldThr << 1; // double threshold
+            else if ((newCap = oldCap << 1) < MAXIMUM_CAPACITY && //扩容2倍后的容量 与最大值的比较
+                     oldCap >= DEFAULT_INITIAL_CAPACITY)  
+                newThr = oldThr << 1; // double threshold // > 扩容 2 倍
         }
         else if (oldThr > 0) // initial capacity was placed in threshold
             newCap = oldThr;
@@ -679,6 +708,7 @@ public class HashMap<K,V> extends AbstractMap<K,V>
             newCap = DEFAULT_INITIAL_CAPACITY;
             newThr = (int)(DEFAULT_LOAD_FACTOR * DEFAULT_INITIAL_CAPACITY);
         }
+        // > 重新计算 threshold
         if (newThr == 0) {
             float ft = (float)newCap * loadFactor;
             newThr = (newCap < MAXIMUM_CAPACITY && ft < (float)MAXIMUM_CAPACITY ?
@@ -689,13 +719,14 @@ public class HashMap<K,V> extends AbstractMap<K,V>
             Node<K,V>[] newTab = (Node<K,V>[])new Node[newCap];
         table = newTab;
         if (oldTab != null) {
+            // > 生成新的 Table
             for (int j = 0; j < oldCap; ++j) {
                 Node<K,V> e;
                 if ((e = oldTab[j]) != null) {
                     oldTab[j] = null;
                     if (e.next == null)
-                        newTab[e.hash & (newCap - 1)] = e;
-                    else if (e instanceof TreeNode)
+                        newTab[e.hash & (newCap - 1)] = e; //将old table中的值 重新放入new table
+                    else if (e instanceof TreeNode)   //如果是 TreeNode, 执行树的操作
                         ((TreeNode<K,V>)e).split(this, newTab, j, oldCap);
                     else { // preserve order
                         Node<K,V> loHead = null, loTail = null;
