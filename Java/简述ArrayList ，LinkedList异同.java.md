@@ -65,7 +65,7 @@
 
   ```
   * ### ArrayList & LinkedList 在Query,Add,Remove操作上的快慢比较
-  * #### ArrayList 时间复杂度O(1), LinkedList 时间复杂度O(N).
+  * #### 按下标查找 ArrayList 时间复杂度O(1), LinkedList 时间复杂度O(N); 按对象Object查找 , 时间复杂度都是O(N);
   ###### ArrayList.class
   ```
   /**
