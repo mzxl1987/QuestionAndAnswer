@@ -13,7 +13,7 @@
     /** use serialVersionUID from JDK 1.0.2 for interoperability */
     private static final long serialVersionUID = -6849794470754667710L;
   ```
-  * String 一旦创建无法改变,在String的开头的注释中有这么一句话
+  * ## String 一旦创建无法改变,在String的开头的注释中有这么一句话
   ```
   Strings are constant; their values cannot be changed after they are created. String buffers support mutable strings.
   Because String objects are immutable they can be shared. For example:
@@ -22,21 +22,21 @@
       char data[] = {'a', 'b', 'c'};
       String str = new String(data);
   ```
-  * String构造函数的几种实现与区别
-    * 创建一个empty character sequence
+  * ## String构造函数的几种实现与区别
+    * ### 创建一个empty character sequence
     ```
     public String() {
         this.value = "".value;
     }
     ```
-    * 创建一个与给定参数相同的字符序列,新创建的String是参数String的拷贝
+    * ### 创建一个与给定参数相同的字符序列,新创建的String是参数String的拷贝
     ```
     public String(String original) {
         this.value = original.value;
         this.hash = original.hash;
     }
     ```
-    * 使用char[] 创建一个String对象, 新的对象同样是char[]的拷贝
+    * ### 使用char[] 创建一个String对象, 新的对象同样是char[]的拷贝
     ```
     public String(char value[]) {
         this.value = Arrays.copyOf(value, value.length);
