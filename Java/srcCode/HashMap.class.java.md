@@ -1870,28 +1870,30 @@ public class HashMap<K,V> extends AbstractMap<K,V>
          * The kc argument caches comparableClassFor(key) upon first use
          * comparing keys.
          */
+        // > 查找节点
+        // > 树节点的排布是按照hashCode排布, p.left.hashCode < p.hashCode < p.right.hashCode
         final TreeNode<K,V> find(int h, Object k, Class<?> kc) {
             TreeNode<K,V> p = this;
             do {
                 int ph, dir; K pk;
                 TreeNode<K,V> pl = p.left, pr = p.right, q;
-                if ((ph = p.hash) > h)
-                    p = pl;
-                else if (ph < h)
+                if ((ph = p.hash) > h)    // > p.hash > h, 节点左移
+                    p = pl;               
+                else if (ph < h)          // > p.hash < h, 节点右移
                     p = pr;
-                else if ((pk = p.key) == k || (k != null && k.equals(pk)))
-                    return p;
-                else if (pl == null)
+                else if ((pk = p.key) == k || (k != null && k.equals(pk)))   // > p.hash = h,比较p.key ? k
+                    return p;      // > 如果p.key == k   or k.equals(parent.key), 返回该TreeNode
+                else if (pl == null)     // > 如果hash相等,但是key不等的时候. 如果parent.left == null, 右移
                     p = pr;
-                else if (pr == null)
+                else if (pr == null)     // > 如果parent.right == null, 左移
                     p = pl;
-                else if ((kc != null ||
-                          (kc = comparableClassFor(k)) != null) &&
+                else if ((kc != null ||                              // > kc 不为 null
+                          (kc = comparableClassFor(k)) != null) &&   // > kc 必须要实现Comparable接口
                          (dir = compareComparables(kc, k, pk)) != 0)
                     p = (dir < 0) ? pl : pr;
-                else if ((q = pr.find(h, k, kc)) != null)
+                else if ((q = pr.find(h, k, kc)) != null)             // > 如果kc == null,则像右递归查找
                     return q;
-                else
+                else                                                  // > 向右没有查到结果的时候,节点左移
                     p = pl;
             } while (p != null);
             return null;
