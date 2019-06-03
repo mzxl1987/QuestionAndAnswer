@@ -320,7 +320,7 @@ public class HashMap<K,V> extends AbstractMap<K,V>
      * never be used in index calculations because of table bounds.
      */
      // > key == null , 返回 0
-     // > key != null , 返回 
+     // > key != null , 返回 key.hashCode 异或 key.hashCode高16位
     static final int hash(Object key) {
         int h;
         return (key == null) ? 0 : (h = key.hashCode()) ^ (h >>> 16);
