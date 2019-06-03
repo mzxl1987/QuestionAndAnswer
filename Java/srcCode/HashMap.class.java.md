@@ -698,7 +698,7 @@ public class HashMap<K,V> extends AbstractMap<K,V>
                 threshold = Integer.MAX_VALUE;
                 return oldTab;
             }
-            else if ((newCap = oldCap << 1) < MAXIMUM_CAPACITY && //扩容2倍后的容量 与最大值的比较
+            else if ((newCap = oldCap << 1) < MAXIMUM_CAPACITY && // > 扩容2倍后的容量 与最大值的比较
                      oldCap >= DEFAULT_INITIAL_CAPACITY)  
                 newThr = oldThr << 1; // double threshold // > 扩容 2 倍
         }
@@ -719,29 +719,38 @@ public class HashMap<K,V> extends AbstractMap<K,V>
             Node<K,V>[] newTab = (Node<K,V>[])new Node[newCap];
         table = newTab;
         if (oldTab != null) {
-            // > 生成新的 Table
-            for (int j = 0; j < oldCap; ++j) {
-                Node<K,V> e;
-                if ((e = oldTab[j]) != null) {
+            // > 遍历old table , 将原有的数据放入新的table
+            for (int j = 0; j < oldCap; ++j) {          // > 遍历 old table
+                Node<K,V> e;                            // > 获取Node List
+                if ((e = oldTab[j]) != null) {          // > 根据 index or j 获取 相应的 Node<K,V> list
                     oldTab[j] = null;
-                    if (e.next == null)
-                        newTab[e.hash & (newCap - 1)] = e; //将old table中的值 重新放入new table
-                    else if (e instanceof TreeNode)   //如果是 TreeNode, 执行树的操作
-                        ((TreeNode<K,V>)e).split(this, newTab, j, oldCap);
-                    else { // preserve order
+                    if (e.next == null)                        // > 当前Node<K,V> list.size = 1
+                        newTab[e.hash & (newCap - 1)] = e;     // > 将Node<K,V> list放入new table
+                    else if (e instanceof TreeNode)            // > Node<K,V> list.size >= 8 时, list 转换为红黑树.
+                        ((TreeNode<K,V>)e).split(this, newTab, j, oldCap);  // > 将节点插入red-black tree
+                    else { // preserve order                   // > Node<K,V> list.size 在 2~7之间
                         Node<K,V> loHead = null, loTail = null;
                         Node<K,V> hiHead = null, hiTail = null;
                         Node<K,V> next;
                         do {
                             next = e.next;
-                            if ((e.hash & oldCap) == 0) {
+                            
+                            // > e.hash & oldCap == 0 表示 e 在newTable的下标属于 0 ~ oldCap-1
+                            // > 1. e 在newTable中的下标 index = e.hash & (newCap - 1), 而(newCap - 1)的最高位就是oldCap
+                            // > 2. newCap - 1 = oldCap | (oldCap - 1)
+                            // > 3. index = e.hash & (newCap - 1) = e.hash & (oldCap | (oldCap - 1))
+                            // >          = (e.hash & oldCap) | (e.hash & (oldCap - 1))
+                            // >          = (e.hash & oldCap) | (e在oldTable中的index)
+                            // > 所以当 e.hash & oldCap = 0 时, e在newTable中的下标就等于oldTable中的下标
+                            // > 当 e.hash & oldCap != 0 (即e.hash & oldCap = oldCap) 时, e在newTable中的下标就等于 oldCap + oldTable的原有下标                       
+                            if ((e.hash & oldCap) == 0) {  // > newIndex = oldIndex, 新旧下标相等
                                 if (loTail == null)
-                                    loHead = e;
+                                    loHead = e;            // > 第一个Node<K,V>当作是头
                                 else
-                                    loTail.next = e;
-                                loTail = e;
+                                    loTail.next = e;       // > 修改next引用
+                                loTail = e;                // > 修改尾部
                             }
-                            else {
+                            else {                         // > newIndex != oldIndex, 新旧下标不等
                                 if (hiTail == null)
                                     hiHead = e;
                                 else
@@ -749,11 +758,11 @@ public class HashMap<K,V> extends AbstractMap<K,V>
                                 hiTail = e;
                             }
                         } while ((e = next) != null);
-                        if (loTail != null) {
+                        if (loTail != null) {              // loTail,loHead表示Node<K,V>添加到原有 index 位置
                             loTail.next = null;
                             newTab[j] = loHead;
                         }
-                        if (hiTail != null) {
+                        if (hiTail != null) {              // hiTail,hiHead表示Node<K,V>添加到 index + oldCap 位置
                             hiTail.next = null;
                             newTab[j + oldCap] = hiHead;
                         }
