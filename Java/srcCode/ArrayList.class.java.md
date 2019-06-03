@@ -413,7 +413,7 @@ public class ArrayList<E> extends AbstractList<E>
     }
 
     // Positional Access Operations
-
+    // > 时间复杂度是O(1)
     @SuppressWarnings("unchecked")
     E elementData(int index) {
         return (E) elementData[index];
@@ -426,6 +426,7 @@ public class ArrayList<E> extends AbstractList<E>
      * @return the element at the specified position in this list
      * @throws IndexOutOfBoundsException {@inheritDoc}
      */
+    // > 时间复杂度 O(1)
     public E get(int index) {
         rangeCheck(index);
 
