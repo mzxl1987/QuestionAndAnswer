@@ -473,6 +473,7 @@ public class LinkedList<E>
      * @return the element at the specified position in this list
      * @throws IndexOutOfBoundsException {@inheritDoc}
      */
+    // > 获取数据的时间复杂度O(N) 
     public E get(int index) {
         checkElementIndex(index);
         return node(index).item;
