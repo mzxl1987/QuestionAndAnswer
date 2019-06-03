@@ -150,6 +150,7 @@ public class Object {
      * @see     #hashCode()
      * @see     java.util.HashMap
      */
+    // > 引用的比较 
     public boolean equals(Object obj) {
         return (this == obj);
     }
@@ -214,6 +215,7 @@ public class Object {
      *               be cloned.
      * @see java.lang.Cloneable
      */
+    // > 调用了native 方法 
     protected native Object clone() throws CloneNotSupportedException;
 
     /**
@@ -237,12 +239,13 @@ public class Object {
      *
      * @return  a string representation of the object.
      */
+    // > 返回 className @ hashCode 
     public String toString() {
         return getClass().getName() + "@" + Integer.toHexString(hashCode());
     }
 
     /**
-     * Wakes up a single thread that is waiting on this object's
+     * Wakes up a single thread that is waiting on this object's           // > 随机唤醒一个 waiting on 当前对象的监视 的线程
      * monitor. If any threads are waiting on this object, one of them
      * is chosen to be awakened. The choice is arbitrary and occurs at
      * the discretion of the implementation. A thread waits on an object's
@@ -273,10 +276,11 @@ public class Object {
      * @see        java.lang.Object#notifyAll()
      * @see        java.lang.Object#wait()
      */
+    // > 调用 native 方法 
     public final native void notify();
 
     /**
-     * Wakes up all threads that are waiting on this object's monitor. A
+     * Wakes up all threads that are waiting on this object's monitor. A  // > 唤醒所有 监视当前对象的线程
      * thread waits on an object's monitor by calling one of the
      * {@code wait} methods.
      * <p>
@@ -384,6 +388,7 @@ public class Object {
      * @see        java.lang.Object#notify()
      * @see        java.lang.Object#notifyAll()
      */
+    // > wait 指定时间 
     public final native void wait(long timeout) throws InterruptedException;
 
     /**
