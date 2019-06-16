@@ -1,7 +1,7 @@
 ## 4.并行程序开发及优化
 ### 4.1.并行程序设计模式
 #### 4.1.1.Future模式
-
+#### 4.1.2.MasterWorker模式
 
 
 
@@ -151,3 +151,140 @@ class RealData implements Callable<String> {
 }
 ```
 
+[4.1.2.MasterWorker模式](#412MasterWorker模式)
+> 核心思想:系统由两类进程工作:Master进程&Worker进程.Master进程主要负责接收和分配任务,Worker进程主要执行任务,并将执行结果返回;Master负责归纳和汇总，从而的到最终的结果;对于用户来说，用提交了任务,Master分配完任务之后立即返回,并不会在执行的过程中等待,处理的过程是异步的;
+`下面利用求1~100的立方和,简单的代码实现Master-Worker框架
+```
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Queue;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ExecutionException;
+
+public class Test {
+
+	public static void main(String[] args) throws InterruptedException, ExecutionException {
+		
+		//计算1~100的立方和
+		Master m = new Master(new PlusWorker(), 5);
+		for(int i = 1; i <= 100; i++) {
+			m.submit(i);
+		}
+		m.execute();
+		
+		//不停的计算和汇总
+		long result = 0;
+		Map<String,Object> resultMap = m.getResultMap();
+		//判断是否执行完 & 是否所有的结果都被取出
+		while(resultMap.size() > 0 || !m.isComplete()) {
+			Set<String> keys = resultMap.keySet();
+			String key = null;
+			if(!keys.isEmpty()) {
+				key = keys.stream().findFirst().get();  //获取一个key
+			}
+			
+			Integer i = null;
+			if(key != null) i = (Integer)resultMap.get(key);  //获取结果
+			if(i != null) result += i;                        //求和
+			if(key != null) resultMap.remove(key);            //删除已经计算过的结果
+			
+		}
+		
+		System.out.println(result);
+		
+	}
+	
+	
+	
+}
+
+class Worker implements Runnable{
+
+	protected Queue<Object> workQueue;
+	protected Map<String,Object> resultMap;
+	
+	 
+	
+	public void setWorkQueue(Queue<Object> workQueue) {
+		this.workQueue = workQueue;
+	}
+
+
+
+	public void setResultMap(Map<String, Object> resultMap) {
+		this.resultMap = resultMap;
+	}
+
+	public Object handle(Object input) {
+		return input;
+	}
+
+	@Override
+	public void run() {
+		while(true) {
+			Object b = workQueue.poll();  //取出任务
+			if(b == null) return;         //所有任务完成则返回
+			Object r = handle(b);         //执行任务,并返回结果
+			resultMap.put(Integer.toString(r.hashCode()), r);  //将结果放置结果队列
+		}
+	}
+	
+}
+
+class PlusWorker extends Worker{
+	@Override
+	public Object handle(Object input) {
+		Integer i = (Integer)input;
+		System.out.println("计算立方:" + input);
+		return i*i*i;
+	}
+}
+
+class Master{
+	//任务队列
+	protected Queue<Object> workQueue = new ConcurrentLinkedQueue<Object>();
+	//Worker队列
+	protected Map<String,Thread> threadMap = new HashMap<String,Thread>();
+	//Worker处理的结果集
+	protected Map<String,Object> resultMap = new ConcurrentHashMap<String,Object>();
+	
+	//初始化工作线程
+	public Master(Worker worker,int countWorker) {
+		worker.setResultMap(resultMap);
+		worker.setWorkQueue(workQueue);
+		
+		for(int i = 0; i < countWorker; i++) {
+			threadMap.put(Integer.toString(i), new Thread(worker,Integer.toString(i)));
+		}
+	}
+	
+	//判断是否完成
+	public boolean isComplete() {
+		for (Thread t : threadMap.values()) {
+			if(t.getState() != Thread.State.TERMINATED) return false;
+		}
+		return true;
+	}
+	
+	//提交任务
+	public void submit(Object obj) {
+		workQueue.add(obj);
+	}
+	
+	//启动worker线程
+	public void execute() {
+		threadMap.values().stream().forEach((t)->{
+				t.start();
+		});
+		
+	}
+
+	public Map<String, Object> getResultMap() {
+		return resultMap;
+	}
+	
+}
+```
