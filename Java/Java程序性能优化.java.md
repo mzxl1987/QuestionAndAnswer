@@ -1,7 +1,7 @@
-> 4.并行程序开发及优化
->> 4.1.并行程序设计模式
->>> ###### [4.1.1 Future 模式](#411Future模式)
->>> ###### [4.1.2.MasterWorker模式](#412MasterWorker模式)
+ 4.并行程序开发及优化
+ 4.1.并行程序设计模式
+ [4.1.1 Future 模式](#411Future模式)
+ [4.1.2.MasterWorker模式](#412MasterWorker模式)
 
 
 
