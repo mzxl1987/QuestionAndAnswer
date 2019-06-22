@@ -1,0 +1,302 @@
+# 4.3.JDK并发数据结构
+[4.3.1.并发List](#431并发List)
+[4.3.2.并发Set](#432并发Set)
+[4.3.3.并发Map](#433并发Map)
+[4.3.4.并发Queue](434并发Queue)
+
+#### 4.3.1.并发List
+* Vector , CopyOnWriteArrayList是两个线程安全的list实现
+###### Vector.java
+```
+/**
+     * Inserts the specified object as a component in this vector at the
+     * specified {@code index}. Each component in this vector with
+     * an index greater or equal to the specified {@code index} is
+     * shifted upward to have an index one greater than the value it had
+     * previously.
+     *
+     * <p>The index must be a value greater than or equal to {@code 0}
+     * and less than or equal to the current size of the vector. (If the
+     * index is equal to the current size of the vector, the new element
+     * is appended to the Vector.)
+     *
+     * <p>This method is identical in functionality to the
+     * {@link #add(int, Object) add(int, E)}
+     * method (which is part of the {@link List} interface).  Note that the
+     * {@code add} method reverses the order of the parameters, to more closely
+     * match array usage.
+     *
+     * @param      obj     the component to insert
+     * @param      index   where to insert the new component
+     * @throws ArrayIndexOutOfBoundsException if the index is out of range
+     *         ({@code index < 0 || index > size()})
+     */
+    public synchronized void insertElementAt(E obj, int index) {
+        modCount++;
+        if (index > elementCount) {
+            throw new ArrayIndexOutOfBoundsException(index
+                                                     + " > " + elementCount);
+        }
+        ensureCapacityHelper(elementCount + 1);
+        System.arraycopy(elementData, index, elementData, index + 1, elementCount - index);
+        elementData[index] = obj;
+        elementCount++;
+    }
+
+/**
+     * Deletes the component at the specified index. Each component in
+     * this vector with an index greater or equal to the specified
+     * {@code index} is shifted downward to have an index one
+     * smaller than the value it had previously. The size of this vector
+     * is decreased by {@code 1}.
+     *
+     * <p>The index must be a value greater than or equal to {@code 0}
+     * and less than the current size of the vector.
+     *
+     * <p>This method is identical in functionality to the {@link #remove(int)}
+     * method (which is part of the {@link List} interface).  Note that the
+     * {@code remove} method returns the old value that was stored at the
+     * specified position.
+     *
+     * @param      index   the index of the object to remove
+     * @throws ArrayIndexOutOfBoundsException if the index is out of range
+     *         ({@code index < 0 || index >= size()})
+     */
+    public synchronized void removeElementAt(int index) {
+        modCount++;
+        if (index >= elementCount) {
+            throw new ArrayIndexOutOfBoundsException(index + " >= " +
+                                                     elementCount);
+        }
+        else if (index < 0) {
+            throw new ArrayIndexOutOfBoundsException(index);
+        }
+        int j = elementCount - index - 1;
+        if (j > 0) {
+            System.arraycopy(elementData, index + 1, elementData, index, j);
+        }
+        elementCount--;
+        elementData[elementCount] = null; /* to let gc do its work */
+    }
+    
+    
+    
+```
+* Vector使用了synchronized实现了线程同步,除此之外和ArrayList差不多,但是arrayList不是线程同步,如果想实现线程同步,可以通过
+```
+Collections.synchronizedList(list);
+```
+实现包装
+* CopyWriteArrayList 内部实现与 Vector有不相同,根据字面解释可以得知,在Write操作的时候会Copy数据内容,然后对副本操作。
+```
+/**
+     * Replaces the element at the specified position in this list with the
+     * specified element.
+     *
+     * @throws IndexOutOfBoundsException {@inheritDoc}
+     */
+    public E set(int index, E element) {
+        final ReentrantLock lock = this.lock;                               // Reentrantlock使用了AQS实现
+        lock.lock();                                                        // 申请锁
+        try {
+            Object[] elements = getArray();                                 // 获取数组
+            E oldValue = get(elements, index);                              // 获取index的原有值
+
+            if (oldValue != element) {                                      // oldValue != newValue时
+                int len = elements.length;
+                Object[] newElements = Arrays.copyOf(elements, len);        // 数组的拷贝
+                newElements[index] = element;                               // 添加新元素
+                setArray(newElements);                                      // 将新数组设置回 array
+            } else {
+                // Not quite a no-op; ensures volatile write semantics
+                setArray(elements);                                         // oldValue == newValue的时候,直接将数组返回
+            }
+            return oldValue;
+        } finally {
+            lock.unlock();                                                  // 释放锁
+        }
+    }
+```
+* 可以看出CopyWriteArrayList的Write()操作效率并不高
+* Vector & CopyWriteArrayList的使用场景
+  * read > write : CopyWriteArrayList
+  * read < write : Vector
+  
+#### 4.3.2.并发Set
+与List相似, 并发Set也有一个CopyOnWriteArraySet,实现了Set接口,
+内部实现依赖了CopyOnWriteArrayList,故特性与CopyOnWriteArrayList完全一致,适用于读多写少场景
+#### 4.3.3.并发Map
+适用于高并发的场景ConcurrentHashMap
+```
+/** Implementation for put and putIfAbsent */
+    final V putVal(K key, V value, boolean onlyIfAbsent) {
+        if (key == null || value == null) throw new NullPointerException();
+        int hash = spread(key.hashCode());
+        int binCount = 0;
+        for (Node<K,V>[] tab = table;;) {
+            Node<K,V> f; int n, i, fh;
+            if (tab == null || (n = tab.length) == 0)
+                tab = initTable();
+            else if ((f = tabAt(tab, i = (n - 1) & hash)) == null) {
+                if (casTabAt(tab, i, null,
+                             new Node<K,V>(hash, key, value, null)))
+                    break;                   // no lock when adding to empty bin
+            }
+            else if ((fh = f.hash) == MOVED)
+                tab = helpTransfer(tab, f);
+            else {
+                V oldVal = null;
+                synchronized (f) {                                               // 锁的粒度更小了
+                    if (tabAt(tab, i) == f) {
+                        if (fh >= 0) {
+                            binCount = 1;
+                            for (Node<K,V> e = f;; ++binCount) {
+                                K ek;
+                                if (e.hash == hash &&
+                                    ((ek = e.key) == key ||
+                                     (ek != null && key.equals(ek)))) {
+                                    oldVal = e.val;
+                                    if (!onlyIfAbsent)
+                                        e.val = value;
+                                    break;
+                                }
+                                Node<K,V> pred = e;
+                                if ((e = e.next) == null) {
+                                    pred.next = new Node<K,V>(hash, key,
+                                                              value, null);
+                                    break;
+                                }
+                            }
+                        }
+                        else if (f instanceof TreeBin) {
+                            Node<K,V> p;
+                            binCount = 2;
+                            if ((p = ((TreeBin<K,V>)f).putTreeVal(hash, key,
+                                                           value)) != null) {
+                                oldVal = p.val;
+                                if (!onlyIfAbsent)
+                                    p.val = value;
+                            }
+                        }
+                    }
+                }
+                if (binCount != 0) {
+                    if (binCount >= TREEIFY_THRESHOLD)
+                        treeifyBin(tab, i);                          //二叉树中CAS实现了锁
+                    if (oldVal != null)
+                        return oldVal;
+                    break;
+                }
+            }
+        }
+        addCount(1L, binCount);
+        return null;
+    }
+    
+    /**
+     * Returns the value to which the specified key is mapped,
+     * or {@code null} if this map contains no mapping for the key.
+     *
+     * <p>More formally, if this map contains a mapping from a key
+     * {@code k} to a value {@code v} such that {@code key.equals(k)},
+     * then this method returns {@code v}; otherwise it returns
+     * {@code null}.  (There can be at most one such mapping.)
+     *
+     * @throws NullPointerException if the specified key is null
+     */
+    public V get(Object key) {
+        Node<K,V>[] tab; Node<K,V> e, p; int n, eh; K ek;
+        int h = spread(key.hashCode());
+        if ((tab = table) != null && (n = tab.length) > 0 &&
+            (e = tabAt(tab, (n - 1) & h)) != null) {
+            if ((eh = e.hash) == h) {
+                if ((ek = e.key) == key || (ek != null && key.equals(ek)))
+                    return e.val;
+            }
+            else if (eh < 0)
+                return (p = e.find(h, key)) != null ? p.val : null;
+            while ((e = e.next) != null) {
+                if (e.hash == h &&
+                    ((ek = e.key) == key || (ek != null && key.equals(ek))))
+                    return e.val;
+            }
+        }
+        return null;
+    }
+    
+```
+#### 4.3.4.并发Queue
+###### ConcurrentLinkedQueue.java
+```
+/**
+     * Inserts the specified element at the tail of this queue.
+     * As the queue is unbounded, this method will never return {@code false}.
+     *
+     * @return {@code true} (as specified by {@link Queue#offer})
+     * @throws NullPointerException if the specified element is null
+     */
+    public boolean offer(E e) {
+        checkNotNull(e);
+        final Node<E> newNode = new Node<E>(e);
+
+        for (Node<E> t = tail, p = t;;) {
+            Node<E> q = p.next;
+            if (q == null) {
+                // p is last node
+                if (p.casNext(null, newNode)) {
+                    // Successful CAS is the linearization point
+                    // for e to become an element of this queue,
+                    // and for newNode to become "live".
+                    if (p != t) // hop two nodes at a time
+                        casTail(t, newNode);  // Failure is OK.
+                    return true;
+                }
+                // Lost CAS race to another thread; re-read next
+            }
+            else if (p == q)
+                // We have fallen off list.  If tail is unchanged, it
+                // will also be off-list, in which case we need to
+                // jump to head, from which all live nodes are always
+                // reachable.  Else the new tail is a better bet.
+                p = (t != (t = tail)) ? t : head;
+            else
+                // Check for tail updates after two hops.
+                p = (p != t && t != (t = tail)) ? t : q;
+        }
+    }
+    
+    /**
+     * Removes a single instance of the specified element from this queue,
+     * if it is present.  More formally, removes an element {@code e} such
+     * that {@code o.equals(e)}, if this queue contains one or more such
+     * elements.
+     * Returns {@code true} if this queue contained the specified element
+     * (or equivalently, if this queue changed as a result of the call).
+     *
+     * @param o element to be removed from this queue, if present
+     * @return {@code true} if this queue changed as a result of the call
+     */
+    public boolean remove(Object o) {
+        if (o != null) {
+            Node<E> next, pred = null;
+            for (Node<E> p = first(); p != null; pred = p, p = next) {
+                boolean removed = false;
+                E item = p.item;
+                if (item != null) {
+                    if (!o.equals(item)) {
+                        next = succ(p);
+                        continue;
+                    }
+                    removed = p.casItem(item, null);
+                }
+
+                next = succ(p);
+                if (pred != null && next != null) // unlink
+                    pred.casNext(p, next);
+                if (removed)
+                    return true;
+            }
+        }
+        return false;
+    }
+```
