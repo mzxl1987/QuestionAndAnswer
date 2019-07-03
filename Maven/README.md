@@ -1,6 +1,7 @@
 # maven命令的使用方式
 ###### 清理
->> mvn clean
+> mvn clean
 ###### 打包
->> * mvn package
->> * mvn package assembly:single
+> * mvn package
+> * mvn package assembly:single
+> * mvn package -Dmaven.test.skip=true
