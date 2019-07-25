@@ -9,7 +9,7 @@
 > * mvn clean install
 > * mvn clean package
 ###### pom.xml中设置远程仓库
-``` 
+```xml
 <repositories>
   <repository>
      <id>central</id>
